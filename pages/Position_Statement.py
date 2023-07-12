@@ -1,12 +1,11 @@
 import os
 import streamlit as st
-import psycopg2
 from dotenv import load_dotenv
 from database.database_connector import DatabaseConnector
 from database.database_connector import StreamLitDatabaseConnector
 from datetime import datetime
-from repository.position_statements import PositionStatements
-from repository.eod_prices import EodPrices
+from repository.tables.position_statements import PositionStatements
+from repository.tables.eod_prices import EodPrices
 from services.position_statement_analyzer import PositionStatementAnalyzer
 
 
@@ -16,22 +15,22 @@ def main():
     load_dotenv()
 
     # Local Machine Database Configurations
+    # 
+    db_config = {
+        "host": os.getenv("DB_HOST"),
+        "port": os.getenv("DB_PORT"),
+        "database": os.getenv("DB_DATABASE"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD")
+    }
 
-    # db_config = {
-    #     "host": os.getenv("DB_HOST"),
-    #     "port": os.getenv("DB_PORT"),
-    #     "database": os.getenv("DB_DATABASE"),
-    #     "user": os.getenv("DB_USER"),
-    #     "password": os.getenv("DB_PASSWORD")
-    # }
-
-    # database = DatabaseConnector(st.secrets.postgres)
-    # connection = database.connect()
+    database = DatabaseConnector(db_config)
+    connection = database.connect()
     
     
     # Streamlit Share Database Configurations
-    database = StreamLitDatabaseConnector()
-    connection = database.connect(st.secrets.postgres)
+    # database = StreamLitDatabaseConnector()
+    # connection = database.connect(st.secrets.postgres)
     position_statements = PositionStatements(connection)
     eod_prices = EodPrices(connection)
     position_statement_analyzer = PositionStatementAnalyzer(position_statements, eod_prices)
@@ -56,8 +55,12 @@ def main():
     with col5:
         selected_date = st.date_input("Select a date", datetime.now())
 
+
     if st.button("Submit"):
         position_statement_analyzer.run(selected_date, asset_class, client_name, custodian_name, threshold)
     
 if __name__ == "__main__":
-    main()  
+    if st.session_state.get('authenticated', False):
+        main()
+    else:
+        st.warning('Please login to access this page') 

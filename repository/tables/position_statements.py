@@ -33,7 +33,7 @@ class PositionStatements:
         Fetch and return security id and mtm_price based on the provided date, 
         asset class, client name, and custodian name from the database.
         """
-        query = f"SELECT security_id, mtm_price from position_statements WHERE statement_date = '{date}'"
+        query = f"SELECT security_id, mtm_price, isin, ccy from position_statements WHERE statement_date = '{date}'"
         conditions = []
 
         if asset_class != "All":
@@ -50,3 +50,9 @@ class PositionStatements:
 
         self.cursor.execute(query)
         return self.cursor.fetchall()
+    
+    def get_asset_class_records(self, date):
+        query = f"SELECT asset_class, SUM(mtm_rpt_ccy) as total_mtm_rpt_ccy FROM position_statements WHERE statement_date = '{date}' GROUP BY asset_class"
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
